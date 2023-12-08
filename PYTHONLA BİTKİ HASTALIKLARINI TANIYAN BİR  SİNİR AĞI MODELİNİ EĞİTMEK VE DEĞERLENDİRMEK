@@ -1,0 +1,164 @@
+PYTHONLA BİTKİ HASTALIKLARINI TANIYAN BİR  SİNİR AĞI MODELİNİ EĞİTMEK VE DEĞERLENDİRMEK
+# Gerekli kütüphaneleri içe aktarma
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+# Veri setini indirme ve yükleme
+data_dir = "plantvillage"
+zip_file = "plantvillage.zip"
+# Dosya indirme kontrolü
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+    !wget https://data.mendeley.com/public-files/datasets/tywbtsjrjv/files/d5652a28-c1d8-4b76-97f3-72fb80f94efc/{zip_file} -O {zip_file}
+    # Burada zip dosyasını açma işlemleri de ekleyebilirsiniz.
+else:
+    print("Veri seti zaten indirildi ve açıldı.")
+# Veri setini eğitim ve test alt kümelerine ayırma
+train_dir = "plantvillage/train"
+test_dir = "plantvillage/test"
+# Görüntüleri yeniden boyutlandırma ve artırma
+img_size = 224  # Görüntü boyutu
+batch_size = 32  # Küme boyutu
+# Eğitim veri jeneratörü
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode="nearest"
+)
+# Test veri jeneratörü
+test_datagen = ImageDataGenerator(rescale=1./255)
+# Eğitim veri akışı
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(img_size, img_size),
+    batch_size=batch_size,
+    class_mode="categorical"
+)
+# Test veri akışı
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=(img_size, img_size),
+    batch_size=batch_size,
+    class_mode="categorical"
+)
+# Sınıf isimlerini almak için bir fonksiyon tanımlama
+def get_class_names():
+    classes = []
+    for subdir in sorted(os.listdir(train_dir)):
+        classes.append(subdir)
+    return classes
+# Sınıf isimlerini almak için fonksiyonu çağırma
+class_names = get_class_names()
+print(class_names)
+# Model mimarisini oluşturma
+model = keras.Sequential([
+    layers.Conv2D(32, (3, 3), activation="relu", input_shape=(img_size, img_size, 3)),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation="relu"),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(128, (3, 3), activation="relu"),
+    layers.MaxPooling2D((2, 2)),
+    layers.Flatten(),
+    layers.Dropout(0.5),
+    layers.Dense(256, activation="relu"),
+    layers.Dense(len(class_names), activation="softmax")
+])
+# Modeli derleme
+model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+# Modeli eğitme
+epochs = 10  # Eğitim döngüsü sayısı
+history = model.fit(
+    train_generator,
+    steps_per_epoch=len(train_generator),
+    epochs=epochs,
+    validation_data=test_generator,
+    validation_steps=len(train_generator)  # veya validation_steps=None
+)
+# Eğitim ve doğrulama kaybı ve doğruluğunu görselleştirme
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history.history["loss"], label="Eğitim Kaybı")
+plt.plot(history.history["val_loss"], label="Doğrulama Kaybı")
+plt.xlabel("Döngü")
+plt.ylabel("Kayıp")
+plt.legend()
+plt.title("Eğitim ve Doğrulama Kaybı")
+plt.subplot(1, 2, 2)
+plt.plot(history.history["accuracy"], label="Eğitim Doğruluğu")
+plt.plot(history.history["val_accuracy"], label="Doğrulama Doğruluğu")
+plt.xlabel("Döngü")
+plt.ylabel("Doğruluk")
+plt.legend()
+plt.title("Eğitim ve Doğrulama Doğruluğu")
+plt.show()
+# Modelin test verisi üzerindeki doğruluğunu hesaplama
+test_loss, test_acc = model.evaluate(test_generator)
+print("Test loss:", test_loss)
+print("Test accuracy:", test_acc)
+# Test verisinden rastgele birkaç örnek seçme
+num_samples = 9  # Seçilecek örnek sayısı
+sample_images, sample_labels = next(test_generator)  # Test veri akışından bir küme almak
+sample_indices = np.random.choice(range(batch_size), size=num_samples, replace=False)  # Rastgele indeksler seçmek
+sample_images = sample_images[sample_indices]  # Seçilen örnek görüntüleri almak
+sample_labels = sample_labels[sample_indices]  # Seçilen örnek etiketleri almak
+sample_predictions = model.predict(sample_images)  # Seçilen örnekler için modelin tahminlerini almak
+# Modelin tahminlerini ve gerçek etiketleri görselleştirme
+plt.figure(figsize=(10, 10))
+for i in range(num_samples):
+    plt.subplot(3, 3, i+1)
+    plt.imshow(sample_images[i])
+    pred_class = np.argmax(sample_predictions[i])  # Tahmin edilen sınıfı almak
+    true_class = np.argmax(sample_labels[i])  # Gerçek sınıfı almak
+    color = "green" if pred_class == true_class else "red"  # Tahminin doğru veya yanlış olmasına göre renk belirlemek
+    plt.title(f"Tahmin: {class_names[pred_class]}\nGerçek: {class_names[true_class]}", color=color)
+    plt.axis("off")
+plt.show()
+
+Bu Python kodu, bitki hastalıklarını tanıyan bir derin öğrenme modeli oluşturmak için TensorFlow ve Keras kütüphanelerini kullanır. İşte kodun adım adım açıklaması:
+1. Gerekli Kütüphanelerin İçe Aktarılması:
+   - `os`, `numpy`, `pandas`, `matplotlib.pyplot`, `tensorflow`, ve `keras` gibi gerekli kütüphaneler içe aktarılır.
+   - Resim verilerini işlemek için `ImageDataGenerator` sınıfı da içe aktarılır.
+2. Veri Setinin İndirilmesi ve Yüklenmesi:
+   - Veri seti "plantvillage" dizinine indirilir. Bu dizin daha önce oluşturulmuş değilse, veri seti zip dosyasıyla birlikte indirilir ve dizin oluşturularak içeriği çıkarılır.
+3. Veri Setinin Eğitim ve Test Alt Kümelerine Ayrılması:
+   - Veri seti, eğitim ve test veri kümelerine ayrılır.
+4. Görüntüleri Yeniden Boyutlandırma ve Artırma:
+   - Eğitim verileri için `ImageDataGenerator` kullanılarak görüntüler yeniden boyutlandırılır ve çeşitli artırma teknikleri uygulanır.
+   - Test verileri ise sadece yeniden boyutlandırılır.
+5. Eğitim ve Test Veri Akışları Oluşturulması:
+   - `flow_from_directory` fonksiyonu kullanılarak eğitim ve test veri akışları oluşturulur.
+6. Sınıf İsimlerinin Alınması:
+   - Eğitim veri dizinindeki alt dizin isimleri, sınıf isimlerini içeren bir liste elde etmek için bir fonksiyon tanımlanır.
+7. Model Mimarisi Oluşturulması:
+   - Bir Convolutional Neural Network (CNN) modeli, Conv2D ve MaxPooling2D katmanlarıyla birlikte Flatten, Dropout ve Dense katmanları kullanılarak oluşturulur.
+8. Modelin Derlenmesi:
+   - Modelin optimizasyon, kayıp fonksiyonu ve değerlendirme metrikleri belirlenerek derlenir.
+9. Modelin Eğitilmesi:
+   - Oluşturulan model, eğitim veri akışı kullanılarak belirli sayıda döngüde eğitilir.
+10. Eğitim ve Doğrulama İstatistiklerinin Görselleştirilmesi:
+   - Eğitim ve doğrulama kayıpları ile doğruluk değerleri matplotlib kütüphanesi kullanılarak görselleştirilir.
+11. Test Verisi Üzerinde Modelin Değerlendirilmesi:
+   - Eğitilen model, test veri akışı kullanılarak değerlendirilir ve kayıp ile doğruluk sonuçları yazdırılır.
+12. Rastgele Örneklerin Görselleştirilmesi:
+   - Test veri akışından rastgele seçilen örnekler, modelin tahminleri ve gerçek etiketleri ile birlikte görselleştirilir.
+13. Modelin Test Verisi Üzerindeki Doğruluğunun Görselleştirilmesi:
+    - Test verisi üzerinde modelin performansını gösteren bir görsel oluşturulur. Bu, kayıp ve doğruluk değerlerini içerir.
+14. Modelin Performansının Görselleştirilmesi:
+    - Eğitim ve doğrulama kaybı ile doğruluk değerlerini gösteren bir grafik oluşturulur. Bu, modelin genel performansını değerlendirmeye yardımcı olur.
+15. Test Verisinden Rastgele Örneklerin Seçilmesi:
+    - Test veri akışından rastgele bir küme alınır ve bu örnekler üzerinde modelin tahminleri görselleştirilir.
+16. Modelin Tahminlerinin ve Gerçek Etiketlerin Görselleştirilmesi:
+    - Seçilen örneklerin üzerinde modelin yaptığı tahminler ile gerçek etiketleri karşılaştıran bir görsel oluşturulur. Doğru tahminler yeşil, yanlış tahminler ise kırmızı renkte gösterilir.
+Bu kod, bitki hastalıklarını tanıyan bir sinir ağı modelini eğitmek ve değerlendirmek için kullanılır. Öğrenme işlemi sırasında, eğitim ve doğrulama verileri üzerindeki performans metrikleri görselleştirilir. Ayrıca, modelin test verisi üzerindeki doğruluğu ve rastgele örnekler üzerindeki tahminleri görsel olarak kontrol edilir.
+
+
