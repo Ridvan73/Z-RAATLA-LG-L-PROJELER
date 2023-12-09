@@ -1,0 +1,88 @@
+ Bir Veri Setinden Ürün Tahmini Yapmak İçin 
+Bir Makine Öğrenmesi Modeli Eğitmek
+```python
+# Ürün Tahmini 
+# Veri seti ve hedef değişken detayları
+# Veri seti olarak 'urunler.csv' dosyası kullanıldı
+# Hedef değişkenin adı 'target' olarak belirlendi 
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score
+from lightgbm import LGBMRegressor
+# Veri yükleme
+veriler = pd.read_csv('urunler.csv') 
+X = veriler.drop('target', axis=1)
+y = veriler['target']
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+# Model eğitimi
+model = LGBMRegressor()
+model.fit(X_train, y_train)
+# Çapraz doğrulama ile performans değerlendirmesi
+cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+print(f'Ortalama cv skoru: {cv_scores.mean()}')
+#Yazan Rıdvan Kaya 
+```
+Bu kod parçası, ‘urunler.csv’ adlı bir veri
+setini
+kullanarak bir ürün tahmini modeli
+eğitmeyi amaçlamaktadır. Veri setindeki
+‘target’ adlı değişken, tahmin edilmek
+istenen hedef değişkendir. Kod, veri 
+setini pandas kütüphanesi ile okur, 
+hedef değişkeni ayırır ve veriyi
+eğitim ve test kümelerine bölerek 
+model için hazırlar. Ardından, 
+lightgbm kütüphanesinden LGBMRegressor 
+adlı bir model nesnesi oluşturur ve 
+eğitim verisi ile modeli eğitir.
+Son olarak, çapraz doğrulama
+yöntemi ile modelin performansını 
+değerlendirir ve ortalama skorunu
+ekrana yazdırır.
+Bu kodun görevi, bir veri setinden 
+ürün tahmini yapmak için bir makine 
+öğrenmesi modeli eğitmektir. Makine 
+öğrenmesi, verilerden öğrenerek ve 
+örüntüleri tanıyarak yapay zekâ 
+uygulamaları geliştirmek için
+kullanılan bir bilgisayar bilimi 
+dalıdır. Bu kod, lightgbm adlı bir
+kütüphaneyi kullanarak, verilerdeki
+özellikler ile hedef değişken arasındaki
+ilişkiyi öğrenen ve yeni verilere tahminler 
+üreten bir model oluşturur. Bu model, hızlı,
+hafif ve yüksek performanslı bir modeldir. 
+Bu kod, modelin performansını ölçmek için 
+çapraz doğrulama adı verilen bir yöntem 
+kullanır. Çapraz doğrulama, veriyi küçük 
+parçalara bölerek, her parçayı sırayla
+test verisi olarak kullanır ve geri kalan 
+verilerle modeli eğitir. Böylece, modelin 
+farklı veri kümelerine ne kadar iyi uyum 
+sağladığı değerlendirilir.
+Bu kodu çalıştırmak için öncelikle
+Python programlama dilini bilgisayarınıza 
+yüklemeniz gerekiyor. Python, resmi web 
+sitesinden indirilebilir veya paket
+yöneticisi aracılığıyla kurulabilir.
+Python'u yükledikten sonra, kodu 
+yazdığınız metin dosyasını kaydedip
+terminalden çalıştırabilirsiniz.
+Örneğin, kodunuzun bulunduğu klasöre 
+gidip şu komutu yazabilirsiniz:
+`python randevu.py`
+Bu komut, kodunuzu Python yorumlayıcısı 
+ile çalıştırır ve ekrana çıktısını verir. 
+Alternatif olarak, Visual Studio Code
+gibi bir geliştirme ortamı kullanarak 
+da kodunuzu çalıştırabilirsiniz. Visual
+Studio Code, Python kodlarını yazmak, 
+düzenlemek, hata ayıklamak ve çalıştırmak 
+için kullanışlı bir araçtır. Visual
+Studio Code'u  adresinden indirip
+kurabilirsiniz. Visual Studio Code'u 
+kurduktan sonra, Python uzantısını da 
+yüklemeniz gerekiyor. Python uzantısı,
+Visual Studio Code'a Python desteği sağlar.  
+Python uzantısını yükledikten sonra, 
+kodunuzu Visual Studio Code ile açabilir 
+ve çalıştırabilirsiniz. 
